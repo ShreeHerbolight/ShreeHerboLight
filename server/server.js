@@ -32,13 +32,21 @@ if (!MONGODB_URI) {
 
 // Connect to MongoDB with optimized settings for serverless
 const connectDB = async () => {
-  if (mongoose.connection.readyState >= 1) return;
+  if (mongoose.connection.readyState >= 1) {
+    console.log('✅ Using existing DB connection');
+    return;
+  }
   
+  console.log('⏳ Connecting to MongoDB Atlas...');
   try {
-    await mongoose.connect(MONGODB_URI);
-    console.log('✅ Connected to MongoDB Atlas');
+    await mongoose.connect(MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000, // Timeout after 5 seconds instead of 30
+      socketTimeoutMS: 45000,
+    });
+    console.log('✅ Successfully connected to MongoDB Atlas');
   } catch (err) {
     console.error('❌ Database connection error:', err.message);
+    throw err; // Ensure the error is reported
   }
 };
 
