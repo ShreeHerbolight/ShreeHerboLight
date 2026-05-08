@@ -24,6 +24,8 @@ app.get('/', (req, res) => {
 
 // Database Connection
 const PORT = process.env.PORT || 5000;
+const MONGODB_URI = process.env.MONGODB_URI;
+
 // Verifying Environment Variable (Masked)
 if (MONGODB_URI) {
   console.log(`📡 MONGODB_URI found! Starts with: ${MONGODB_URI.substring(0, 15)}...`);
