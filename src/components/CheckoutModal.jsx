@@ -65,7 +65,7 @@ export default function CheckoutModal({ isOpen, onClose, product, quantity, onOr
           <div className="order-summary-card">
             <div className="summary-items-list">
               {checkoutItems.map((item, idx) => (
-                <div key={item.id || idx} className="summary-item">
+                <div key={item._id || item.id || idx} className="summary-item">
                   <div className="summary-img" style={{ background: item.bg || '#f9f9f9' }}>
                     {item.image ? (
                       <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />

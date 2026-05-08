@@ -69,7 +69,7 @@ export default function SideDrawer({ type, isOpen, onClose, onCheckout, orders =
             ))
           ) : (
             items.map(item => (
-              <div key={item.id} className="drawer-item">
+              <div key={item._id || item.id} className="drawer-item">
                 <div className="item-img" style={{ background: item.bg }}>
                   <img src={item.image} alt={item.name} />
                 </div>
@@ -78,7 +78,7 @@ export default function SideDrawer({ type, isOpen, onClose, onCheckout, orders =
                   <p className="item-price">₹{item.price} {item.quantity > 1 && <span className="item-qty">x {item.quantity}</span>}</p>
                   <div className="item-actions">
                     {type === 'cart' ? (
-                      <button className="item-remove-btn" onClick={() => removeFromCart(item.id)}>
+                      <button className="item-remove-btn" onClick={() => removeFromCart(item._id || item.id)}>
                         <Icon name="Trash2" size={14} /> Remove
                       </button>
                     ) : (

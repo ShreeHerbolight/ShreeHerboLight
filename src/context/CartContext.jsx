@@ -8,10 +8,11 @@ export function CartProvider({ children }) {
 
   const addToCart = (product, quantity = 1) => {
     setCart(prev => {
-      const existing = prev.find(item => item.id === product.id)
+      const pId = product._id || product.id
+      const existing = prev.find(item => (item._id === pId || item.id === pId))
       if (existing) {
         return prev.map(item => 
-          item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
+          (item._id === pId || item.id === pId) ? { ...item, quantity: item.quantity + quantity } : item
         )
       }
       return [...prev, { ...product, quantity }]
@@ -19,7 +20,7 @@ export function CartProvider({ children }) {
   }
 
   const removeFromCart = (productId) => {
-    setCart(prev => prev.filter(item => item.id !== productId))
+    setCart(prev => prev.filter(item => (item._id !== productId && item.id !== productId)))
   }
 
   const clearCart = () => {
@@ -28,8 +29,9 @@ export function CartProvider({ children }) {
 
   const toggleWishlist = (product) => {
     setWishlist(prev => {
-      const isFav = prev.find(item => item.id === product.id)
-      if (isFav) return prev.filter(item => item.id !== product.id)
+      const pId = product._id || product.id
+      const isFav = prev.find(item => (item._id === pId || item.id === pId))
+      if (isFav) return prev.filter(item => (item._id !== pId && item.id !== pId))
       return [...prev, product]
     })
   }

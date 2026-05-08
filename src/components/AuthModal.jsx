@@ -1,18 +1,40 @@
 import { useState } from 'react'
 import Icon from './Icon'
+import axios from 'axios'
+
+const API_URL = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000/api' : '/api')) + '/auth'
 
 export default function AuthModal({ isOpen, onClose, onLogin }) {
   const [isLogin, setIsLogin] = useState(true)
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   if (!isOpen) return null
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // Dummy login
-    onLogin({ email, name: email.split('@')[0] })
-    onClose()
+    setError('')
+    setLoading(true)
+
+    try {
+      const endpoint = isLogin ? '/login' : '/register'
+      const payload = isLogin ? { email, password } : { name, email, password }
+      
+      const res = await axios.post(`${API_URL}${endpoint}`, payload)
+      
+      // Store token if needed (local storage)
+      localStorage.setItem('token', res.data.token)
+      
+      onLogin(res.data.user)
+      onClose()
+    } catch (err) {
+      setError(err.response?.data?.message || 'Something went wrong. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -28,11 +50,20 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
           <p>{isLogin ? 'Sign in to continue to Sree HerboLight' : 'Join us for a pure spiritual journey'}</p>
         </div>
 
+        {error && <div style={{ color: '#ff4d4d', fontSize: '0.85rem', marginBottom: '15px', fontWeight: '600' }}>{error}</div>}
+
         <form className="auth-form" onSubmit={handleSubmit}>
           {!isLogin && (
             <div className="pro-input-wrap">
               <label>Full Name</label>
-              <input type="text" placeholder="Your Name" className="pro-input" required />
+              <input 
+                type="text" 
+                placeholder="Your Name" 
+                className="pro-input" 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required 
+              />
             </div>
           )}
           <div className="pro-input-wrap">
@@ -54,29 +85,21 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
               className="pro-input" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              minLength="6"
               required 
             />
           </div>
 
           {isLogin && <button type="button" className="forgot-pass">Forgot Password?</button>}
 
-          <button type="submit" className="auth-submit-btn">
-            {isLogin ? 'Sign In' : 'Create Account'}
+          <button type="submit" className="auth-submit-btn" disabled={loading}>
+            {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
           </button>
         </form>
 
-        <div className="auth-divider">
-          <span>or continue with</span>
-        </div>
-
-        <button className="google-auth-btn" onClick={() => { onLogin({ name: 'Google User' }); onClose(); }}>
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
-          Sign in with Google
-        </button>
-
         <p className="auth-switch">
           {isLogin ? "Don't have an account?" : "Already have an account?"}
-          <button onClick={() => setIsLogin(!isLogin)}>
+          <button onClick={() => { setIsLogin(!isLogin); setError(''); }}>
             {isLogin ? 'Sign Up' : 'Sign In'}
           </button>
         </p>

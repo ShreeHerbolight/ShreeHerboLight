@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { products } from '../data'
 import Icon from '../components/Icon'
 import { useCart } from '../context/CartContext'
 import isoIcon from '../images/iso_icon.png'
@@ -10,13 +9,14 @@ import safeIcon from '../images/safe_icon.png'
 
 export function ProductCard({ product }) {
   const { cart, addToCart, wishlist, toggleWishlist } = useCart()
-  const inCart = cart.some(item => item.id === product.id)
-  const isWish = wishlist.some(item => item.id === product.id)
+  const pId = product._id || product.id
+  const inCart = cart.some(item => (item._id === pId || item.id === pId))
+  const isWish = wishlist.some(item => (item._id === pId || item.id === pId))
   
   return (
     <article className="phool-card-pro">
       <div className="phool-card-top">
-        <Link to={`/product/${product.id}`}>
+        <Link to={`/product/${pId}`}>
           <div className="phool-img-wrap">
             <img src={product.image} alt={product.name} className="phool-real-img" />
             {product.badge && <span className="phool-badge-red">{product.badge}</span>}
@@ -35,7 +35,7 @@ export function ProductCard({ product }) {
       </div>
 
       <div className="phool-body">
-        <Link to={`/product/${product.id}`}><h3 className="phool-title">{product.name}</h3></Link>
+        <Link to={`/product/${pId}`}><h3 className="phool-title">{product.name}</h3></Link>
         
         <div className="phool-rating-row">
           <Icon name="Star" size={14} fill="#ff9a00" color="#ff9a00" />
@@ -74,7 +74,7 @@ function Stars({ count }) {
 }
 
 
-export default function Category({ all = false, searchTerm = '' }) {
+export default function Category({ products = [], all = false, searchTerm = '' }) {
   const { id } = useParams()
   const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 })
   const [selectedTypes, setSelectedTypes] = useState([])
@@ -83,11 +83,21 @@ export default function Category({ all = false, searchTerm = '' }) {
   
   const categoryName = all 
     ? 'All Products' 
-    : id.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+    : id?.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
   
   const baseProducts = all 
     ? products 
-    : products.filter(p => p.catId === id || p.subCatId === id)
+    : products.filter(p => {
+        const pCat = (p.catId || '').toLowerCase()
+        const pSub = (p.subCatId || '').toLowerCase()
+        const target = (id || '').toLowerCase()
+        
+        // Handle "agarpathi" vs "agarbatti" and "gifting" vs "gift-packs"
+        if (target === 'agarbatti' || target === 'agarpathi') return pCat === 'agarbatti'
+        if (target === 'gifting' || target === 'gift-packs') return pCat === 'gift-packs'
+        
+        return pCat === target || pSub === target
+      })
 
   const filteredProducts = baseProducts.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -161,7 +171,7 @@ export default function Category({ all = false, searchTerm = '' }) {
                     <button className="panel-reset" onClick={() => setSelectedTypes([])}>Reset</button>
                   </div>
                   <div className="panel-list">
-                    {['Agarbatti', 'Cup Sambrani', 'Dhoop Sticks', 'Personal Care'].map(type => (
+                    {['Agarbatti', 'Pooja Essentials', 'Personal Care', 'Gifting'].map(type => (
                       <label key={type} className="panel-list-item">
                         <input type="checkbox" checked={selectedTypes.includes(type)} onChange={() => toggleType(type)} />
                         <span>{type}</span>
@@ -292,7 +302,7 @@ export default function Category({ all = false, searchTerm = '' }) {
 
       {sortedProducts.length > 0 ? (
         <div className="product-grid">
-          {sortedProducts.map(p => <ProductCard key={p.id} product={p} />)}
+          {sortedProducts.map(p => <ProductCard key={p._id || p.id} product={p} />)}
         </div>
       ) : (
         <div className="empty-state">

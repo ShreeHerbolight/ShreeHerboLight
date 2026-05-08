@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { products } from '../data'
 import Icon from '../components/Icon'
 import CheckoutModal from '../components/CheckoutModal'
 import { useCart } from '../context/CartContext'
@@ -9,14 +8,15 @@ import isoIcon from '../images/iso_icon.png'
 import organicIcon from '../images/organic_icon.png'
 import safeIcon from '../images/safe_icon.png'
 
-export default function ProductDetail({ onCheckout }) {
+export default function ProductDetail({ products = [], onCheckout }) {
   const { id } = useParams()
-  const product = products.find(p => p.id === id)
+  // Check both _id (MongoDB) and id (legacy)
+  const product = products.find(p => p._id === id || p.id === id)
   const { cart, addToCart, wishlist, toggleWishlist } = useCart()
   const [quantity, setQuantity] = useState(1)
 
-  const inCart = cart.some(item => item.id === product?.id)
-  const isWish = wishlist.some(item => item.id === product?.id)
+  const inCart = cart.some(item => (item._id === product?._id || item.id === product?.id))
+  const isWish = wishlist.some(item => (item._id === product?._id || item.id === product?.id))
 
 
   useEffect(() => {
@@ -142,9 +142,10 @@ export default function ProductDetail({ onCheckout }) {
         </div>
         <div className="related-products-slider">
           {products
-            .filter(p => p.catId === product.catId && p.id !== product.id)
+            .filter(p => p.catId === product.catId && (p._id || p.id) !== (product._id || product.id))
+            .slice(0, 4)
             .map(p => (
-              <ProductCard key={p.id} product={p} />
+              <ProductCard key={p._id || p.id} product={p} onCheckout={onCheckout} />
             ))}
         </div>
       </section>

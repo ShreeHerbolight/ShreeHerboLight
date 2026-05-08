@@ -10,20 +10,27 @@ import natureIcon from '../images/nature_icon.png'
 import safeHomeIcon from '../images/safe_home_icon.png'
 import traditionIcon from '../images/tradition_icon.png'
 import ingredientsIcon from '../images/ingredients_icon.png'
+import combosCategoryImg from '../images/combos_category.png'
+import herbalAgarbathiImg from '../images/herbal_agarbathi_category_1777263501880.png'
+import panchakavyaImg from '../images/panchakavya_products_category_1777263520616.png'
+import roseWaterImg from '../images/rose_water_category_1777263539013.png'
+import camphorImg from '../images/camphor_category_1777263590488.png'
+import bodyWashImg from '../images/body_wash_category_1777263606152.png'
 
 /* ── Product Card ──────────────────────────── */
 function ProductCard({ product, onCheckout }) {
   const { cart, addToCart, wishlist, toggleWishlist } = useCart()
-  const inCart = cart.some(item => item.id === product.id)
-  const isWish = wishlist.some(item => item.id === product.id)
+  const pId = product._id || product.id
+  const inCart = cart.some(item => (item._id === pId || item.id === pId))
+  const isWish = wishlist.some(item => (item._id === pId || item.id === pId))
   
   return (
     <article className="phool-card-pro">
       <div className="phool-card-top">
-        <Link to={`/product/${product.id}`}>
+        <Link to={`/product/${pId}`}>
           <div className="phool-img-wrap">
             <img src={product.image} alt={product.name} className="phool-real-img" />
-            {product.badge && <span className="phool-badge-red">{product.badge}</span>}
+            {product.badge && <span className="phool-badge-green">{product.badge}</span>}
           </div>
         </Link>
         <button className="phool-shop-now" onClick={() => onCheckout({ product, quantity: 1 })}>
@@ -39,7 +46,7 @@ function ProductCard({ product, onCheckout }) {
       </div>
 
       <div className="phool-body">
-        <Link to={`/product/${product.id}`}><h3 className="phool-title">{product.name}</h3></Link>
+        <Link to={`/product/${pId}`}><h3 className="phool-title">{product.name}</h3></Link>
         
         <div className="phool-rating-row">
           <Stars count={Math.round(product.rating)} />
@@ -64,6 +71,75 @@ function ProductCard({ product, onCheckout }) {
         </button>
       </div>
     </article>
+  )
+}
+
+/* ── Reusable Product Carousel ───────────────────────── */
+function ProductCarousel({ title, subtitle, products, onCheckout, showViewAll = true }) {
+  const scrollRef = useRef(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(true)
+
+  const checkScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
+      setCanScrollLeft(scrollLeft > 10)
+      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 10)
+    }
+  }
+
+  useEffect(() => {
+    checkScroll()
+    const current = scrollRef.current
+    if (current) {
+      current.addEventListener('scroll', checkScroll)
+      window.addEventListener('resize', checkScroll)
+    }
+    return () => {
+      if (current) current.removeEventListener('scroll', checkScroll)
+      window.removeEventListener('resize', checkScroll)
+    }
+  }, [products])
+
+  const scroll = (dir) => {
+    if (scrollRef.current) {
+      const { scrollLeft, clientWidth } = scrollRef.current
+      const scrollAmount = clientWidth
+      scrollRef.current.scrollTo({
+        left: dir === 'left' ? scrollLeft - scrollAmount : scrollLeft + scrollAmount,
+        behavior: 'smooth'
+      })
+    }
+  }
+
+  return (
+    <section className="bs-section reveal">
+      <div className="bs-container">
+        <div className="bs-header">
+          <div className="bs-header-left">
+            <h2 className="bs-section-title">{title}</h2>
+            <p className="bs-section-sub">{subtitle}</p>
+          </div>
+          {showViewAll && <Link to="/shop" className="bs-view-all">VIEW ALL</Link>}
+        </div>
+        
+        <div className="bs-carousel-outer">
+          {canScrollLeft && (
+            <button className="bs-nav-btn bs-prev" onClick={() => scroll('left')}>
+              <Icon name="ChevronLeft" size={24} />
+            </button>
+          )}
+          <div className="bs-track" ref={scrollRef}>
+            {products.map(p => <ProductCard key={p.id} product={p} onCheckout={onCheckout} />)}
+          </div>
+          {canScrollRight && (
+            <button className="bs-nav-btn bs-next" onClick={() => scroll('right')}>
+              <Icon name="ChevronRight" size={24} />
+            </button>
+          )}
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -103,26 +179,28 @@ function HeroCarousel() {
           </div>
         ))}
       </div>
-      <div className="carousel-dots-pro">
-        {slides.map((_, i) => (
-          <button 
-            key={i} 
-            className={`dot-pro ${current === i ? 'active' : ''}`}
-            onClick={() => setCurrent(i)}
-          />
-        ))}
+      <div className="carousel-controls-pro">
+        <button className="carousel-control-btn prev" onClick={() => setCurrent((current - 1 + slides.length) % slides.length)}>
+          <Icon name="ChevronLeft" size={20} />
+        </button>
+        <div className="carousel-dots-pro">
+          {slides.map((_, i) => (
+            <button 
+              key={i} 
+              className={`dot-pro ${current === i ? 'active' : ''}`}
+              onClick={() => setCurrent(i)}
+            />
+          ))}
+        </div>
+        <button className="carousel-control-btn next" onClick={() => setCurrent((current + 1) % slides.length)}>
+          <Icon name="ChevronRight" size={20} />
+        </button>
       </div>
-      <button className="carousel-nav-btn prev" onClick={() => setCurrent((current - 1 + slides.length) % slides.length)}>
-        <Icon name="ChevronLeft" size={24} />
-      </button>
-      <button className="carousel-nav-btn next" onClick={() => setCurrent((current + 1) % slides.length)}>
-        <Icon name="ChevronRight" size={24} />
-      </button>
     </div>
   )
 }
 
-export default function Home({ searchTerm = '', onCheckout }) {
+export default function Home({ products = [], searchTerm = '', onCheckout }) {
   const scrollRef = useRef(null)
 
   const handleScroll = (direction) => {
@@ -156,58 +234,35 @@ export default function Home({ searchTerm = '', onCheckout }) {
     return () => observer.disconnect()
   }, [])
 
-  const baseProds = products.filter(p => p.featured)
-
-  const filteredProducts = baseProds.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         p.tagline?.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    if (!matchesSearch) return false
-    
-    if (p.price < priceRange.min || p.price > priceRange.max) return false
-    if (selectedTypes.length > 0 && !selectedTypes.includes(p.category)) return false
-    
-    // Future-proofing: these fields would need to be added to data.js
-    if (selectedTimes.length > 0 && p.burningTime && !selectedTimes.includes(p.burningTime)) return false
-    if (selectedLengths.length > 0 && p.length && !selectedLengths.includes(p.length)) return false
-    if (selectedBathis.length > 0 && p.bathiType && !selectedBathis.includes(p.bathiType)) return false
-    
-    return true
-  })
-
-  // Sort logic
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    if (sortBy === 'price-low') return a.price - b.price
-    if (sortBy === 'price-high') return b.price - a.price
-    if (sortBy === 'alphabetical-az') return a.name.localeCompare(b.name)
-    return 0
-  })
-
-  const clearAll = () => {
-    setPriceRange({ min: 0, max: 500 })
-    setSelectedTypes([])
-    setSelectedTimes([])
-    setSelectedLengths([])
-    setSelectedBathis([])
-  }
-
-  const toggleFilter = (setFn, value) => {
-    setFn(prev => prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value])
+  const shuffle = (array) => {
+    const shuffled = [...array]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled
   }
 
   const categories = [
-    { name: "Combo's", image: '/images/combos_category.png', link: '/category/gift-packs' },
-    { name: 'Herbal Agarbathi', image: '/images/herbal_agarbathi_category_1777263501880.png', link: '/category/agarbatti' },
-    { name: 'Panchakavya Products', image: '/images/panchakavya_products_category_1777263520616.png', link: '/category/pooja-essentials' },
-    { name: 'Rose Water', image: '/images/rose_water_category_1777263539013.png', link: '/category/rose-water' },
-    { name: 'Camphor', image: '/images/camphor_category_1777263590488.png', link: '/category/camphor' },
-    { name: 'Body Wash', image: '/images/body_wash_category_1777263606152.png', link: '/category/body-wash' },
+    { name: "Combo's", image: combosCategoryImg, link: '/category/gift-packs' },
+    { name: 'Herbal Agarbathi', image: herbalAgarbathiImg, link: '/category/agarbatti' },
+    { name: 'Panchakavya Products', image: panchakavyaImg, link: '/category/pooja-essentials' },
+    { name: 'Rose Water', image: roseWaterImg, link: '/category/rose-water' },
+    { name: 'Camphor', image: camphorImg, link: '/category/camphor' },
+    { name: 'Body Wash', image: bodyWashImg, link: '/category/body-wash' },
   ]
 
+  const featuredProds = shuffle(products.filter(p => p.featured))
+  const topRatedProds = shuffle(products.filter(p => p.rating >= 4.8).slice(0, 15))
+  const saleProds = shuffle(products.filter(p => p.originalPrice - p.price > 20).slice(0, 15))
+  const spiritualProds = shuffle(products.filter(p => p.catId === 'pooja-essentials').slice(0, 15))
+
   return (
-    <main className="shop-main-layout">
-      {/* 1. Category Circles Section */}
+    <>
+      {/* 1. Hero Carousel — Full Width */}
+      <HeroCarousel />
+      
+      {/* 2. Category Circles Section - Moved out for more width */}
       <section className="category-circles-section reveal">
         <h2 className="circles-title">Fragrances For Divine Experiences</h2>
         <div className="circles-grid">
@@ -222,153 +277,171 @@ export default function Home({ searchTerm = '', onCheckout }) {
         </div>
       </section>
 
-      {/* 2. Hero Carousel Section (CYCLE.in style) */}
-      <HeroCarousel />
+      {/* 2.5 Best Sellers Section */}
+      <ProductCarousel 
+        title="Best Sellers" 
+        subtitle="Explore our most-loved natural and traditional wellness products crafted for your well-being." 
+        products={featuredProds} 
+        onCheckout={onCheckout}
+        showViewAll={false}
+      />
 
-      {/* 3. Product Grid */}
-      <section className="shop-grid-section reveal" style={{ marginTop: '1.5rem' }}>
-        <div className="product-grid-pro">
-          {sortedProducts.map(p => <ProductCard key={p.id} product={p} onCheckout={onCheckout} />)}
-        </div>
-      </section>
+      {/* 2.6 Top Products Section */}
+      <ProductCarousel 
+        title="Top Products" 
+        subtitle="Handpicked selection of our top-rated essentials for spiritual and personal care." 
+        products={topRatedProds} 
+        onCheckout={onCheckout}
+      />
 
-      {/* 4. Impact / Why Choose Section (Phool Stat Style) */}
-      <section className="impact-section reveal">
-        <h2 className="impact-title">Why Sree HerboLight?</h2>
-        <div className="impact-grid">
-          {[
-            { label: 'Nature First Always', img: natureIcon },
-            { label: 'Safe for Your Home', img: safeHomeIcon },
-            { label: 'Inspired by Tradition', img: traditionIcon },
-            { label: 'Clean Ingredients', img: ingredientsIcon }
-          ].map(item => (
-            <div key={item.label} className="impact-item">
-              <div className="impact-img-wrap-pro">
-                <img src={item.img} alt={item.label} className="impact-cartoon-img" />
-              </div>
-              <div className="impact-content-pro">
-                <span className="impact-stat">{item.label}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* 2.7 Lightning Sale Section */}
+      <ProductCarousel 
+        title="Lightning Sale" 
+        subtitle="Hurry! Grab these spiritual essentials at exclusive limited-time prices." 
+        products={saleProds} 
+        onCheckout={onCheckout}
+      />
 
-      {/* 5. Customer Experiences (Review Carousel) */}
+      {/* 2.8 Spiritual Essentials Section */}
+      <ProductCarousel 
+        title="Spiritual Essentials" 
+        subtitle="Illuminate your sacred space and elevate your rituals with our traditional pooja items." 
+        products={spiritualProds} 
+        onCheckout={onCheckout}
+      />
+
+
+
+      {/* 5. Customer Experiences (Review Carousel) — Full Width */}
       <ReviewCarousel />
-    </main>
+    </>
   )
 }
 
 
 
-/* -- Review Carousel Component ---------------- */
+/* -- Review Carousel Component (Mamaearth Style) -- */
 function ReviewCarousel() {
-  const [current, setCurrent] = useState(0)
+  const [currentPage, setCurrentPage] = useState(0)
+  const cardsPerView = 3
   const reviews = [
     { 
-      text: "The fragrance of the jasmine agarbatti is just like fresh flowers from the Madurai market. Absolutely divine!",
+      text: "The fragrance of the jasmine agarbatti is just like fresh flowers from the Madurai market. Absolutely divine! I use it every morning during pooja and the scent lingers for hours.",
       name: "Senthil Kumar",
       stars: 5
     },
     { 
-      text: "Sree HerboLight camphor is the purest I have found. No black smoke and the aroma is very peaceful.",
+      text: "Sree HerboLight camphor is the purest I have found. No black smoke and the aroma is very peaceful. I've tried many brands but this one is by far the best quality camphor.",
       name: "Meenakshi Ramasamy",
       stars: 5
     },
     { 
-      text: "I love that these products are eco-friendly. The temple flower recycling initiative is a great service to nature.",
+      text: "I love that these products are eco-friendly. The temple flower recycling initiative is a great service to nature. Supporting brands like this makes me feel good about my purchases.",
       name: "Karthik Raja",
       stars: 5
     },
     { 
-      text: "The rose water is so refreshing and smells completely natural. It has become a part of my daily morning routine.",
+      text: "The rose water is so refreshing and smells completely natural. It has become a part of my daily morning routine. I use it as a toner and it keeps my skin glowing all day.",
       name: "Priyadharshini S.",
-      stars: 4.5
+      stars: 5
     },
     { 
-      text: "Best quality dhoop sticks. They stay lit for a long time and fill the entire house with a calming scent.",
+      text: "Best quality dhoop sticks. They stay lit for a long time and fill the entire house with a calming scent. My family absolutely loves the sandalwood variant.",
       name: "Velmurugan P.",
       stars: 5
     },
     { 
-      text: "Traditional sambrani smell that reminds me of my grandmother's home. Very nostalgic and high quality.",
+      text: "Traditional sambrani smell that reminds me of my grandmother's home. Very nostalgic and high quality. I order these every month without fail now.",
       name: "Lakshmi Narayanan",
       stars: 5
     },
     { 
-      text: "The herbal hand wash is gentle on the skin and the fragrance is very subtle and pleasant.",
+      text: "The herbal body wash is gentle on the skin and the fragrance is very subtle and pleasant. Even my children love using it. Truly a natural product with no harsh chemicals.",
       name: "Anandhi J.",
       stars: 4
     },
     { 
-      text: "Very impressed with the combo pack. It's a great way to try all their amazing products at once.",
+      text: "Very impressed with the combo pack. It's a great way to try all their amazing products at once. I gifted it to my relatives and they all loved it!",
       name: "Saravanan M.",
       stars: 5
     },
     { 
-      text: "The agarbattis don't cause any irritation to the eyes or throat. Clearly made from natural ingredients.",
+      text: "The agarbattis don't cause any irritation to the eyes or throat. Clearly made from natural ingredients. As someone with allergies, this is a game changer for me.",
       name: "Sivakumar V.",
       stars: 5
     },
-    { 
-      text: "High quality products at very reasonable prices. Supporting a local brand feels good!",
-      name: "Gayathri Krishnan",
-      stars: 4.5
-    }
   ]
+
+  const totalPages = Math.ceil(reviews.length / cardsPerView)
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrent(prev => (prev + 1) % reviews.length)
-    }, 5000) // 5 seconds
+      setCurrentPage(prev => (prev + 1) % totalPages)
+    }, 5000)
     return () => clearInterval(timer)
-  }, [reviews.length, current]) // Added current to dependencies to reset interval on manual skip
+  }, [totalPages])
 
-  const next = () => setCurrent(prev => (prev + 1) % reviews.length)
-  const prev = () => setCurrent(prev => (prev - 1 + reviews.length) % reviews.length)
+  const next = () => setCurrentPage(prev => (prev + 1) % totalPages)
+  const prev = () => setCurrentPage(prev => (prev - 1 + totalPages) % totalPages)
 
   return (
-    <section className="review-carousel-section reveal">
-      <h2 className="review-carousel-title">Customer Experiences</h2>
+    <section className="rv-section reveal">
+      <div className="rv-bg-organic"></div>
+      <h2 className="rv-title">What Our Customers Say</h2>
       
-      <div className="review-carousel-main">
-        <button className="review-nav-btn prev" onClick={prev}>
-          <Icon name="ChevronLeft" size={32} color="#fff" />
+      <div className="rv-carousel-wrap">
+        <button className="rv-arrow rv-arrow-left" onClick={prev}>
+          <Icon name="ChevronLeft" size={24} color="#2d5a27" />
         </button>
 
-        <div className="review-carousel-container">
-          <div className="review-card-pro" key={current}>
-            <p className="review-text-pro">"{reviews[current].text}"</p>
-            <p className="review-author-pro">- {reviews[current].name}</p>
-            <div className="review-stars-pro">
-              {[...Array(5)].map((_, i) => (
-                <Icon 
-                  key={i} 
-                  name="Star" 
-                  size={18} 
-                  fill={i < Math.floor(reviews[current].stars) ? "#ffbc00" : "none"} 
-                  color="#ffbc00" 
-                />
-              ))}
-            </div>
+        <div className="rv-track-container">
+          <div 
+            className="rv-track" 
+            style={{ transform: `translateX(-${currentPage * 100}%)` }}
+          >
+            {Array.from({ length: totalPages }).map((_, pageIdx) => (
+              <div className="rv-page" key={pageIdx}>
+                {reviews.slice(pageIdx * cardsPerView, pageIdx * cardsPerView + cardsPerView).map((review, idx) => (
+                  <div className="rv-card" key={idx}>
+                    <p className="rv-text">{review.text}</p>
+                    <div className="rv-author-row">
+                      <div className="rv-avatar-wrap">
+                        <img 
+                          src={`https://i.pravatar.cc/150?u=${encodeURIComponent(review.name)}`} 
+                          alt={review.name} 
+                          className="rv-avatar"
+                        />
+                      </div>
+                      <div className="rv-author-info">
+                        <span className="rv-name">{review.name}</span>
+                        <span className="rv-rating-badge">
+                          {review.stars}.0 <Icon name="Star" size={10} fill="#fff" color="#fff" />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         </div>
 
-        <button className="review-nav-btn next" onClick={next}>
-          <Icon name="ChevronRight" size={32} color="#fff" />
+        <button className="rv-arrow rv-arrow-right" onClick={next}>
+          <Icon name="ChevronRight" size={24} color="#2d5a27" />
         </button>
       </div>
 
-      <div className="review-dots-pro">
-        {reviews.map((_, i) => (
+      <div className="rv-dots">
+        {Array.from({ length: totalPages }).map((_, i) => (
           <button 
             key={i} 
-            className={`review-dot-pro ${current === i ? 'active' : ''}`}
-            onClick={() => setCurrent(i)}
+            className={`rv-dot ${currentPage === i ? 'active' : ''}`}
+            onClick={() => setCurrentPage(i)}
           />
         ))}
       </div>
     </section>
   )
 }
+
+
