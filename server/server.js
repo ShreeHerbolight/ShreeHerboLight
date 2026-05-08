@@ -24,36 +24,42 @@ app.get('/', (req, res) => {
 
 // Database Connection
 const PORT = process.env.PORT || 5000;
-const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-  console.error('❌ CRITICAL: MONGODB_URI is not defined in environment variables!');
+// Verifying Environment Variable (Masked)
+if (MONGODB_URI) {
+  console.log(`📡 MONGODB_URI found! Starts with: ${MONGODB_URI.substring(0, 15)}...`);
+} else {
+  console.error('❌ CRITICAL: MONGODB_URI is MISSING!');
 }
 
 // Connect to MongoDB with optimized settings for serverless
 const connectDB = async () => {
-  if (mongoose.connection.readyState >= 1) {
-    console.log('✅ Using existing DB connection');
-    return;
-  }
+  if (mongoose.connection.readyState >= 1) return;
   
-  console.log('⏳ Connecting to MongoDB Atlas...');
+  console.log('⏳ Attempting Database Connection...');
   try {
     await mongoose.connect(MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000, // Timeout after 5 seconds instead of 30
+      serverSelectionTimeoutMS: 8000,
       socketTimeoutMS: 45000,
+      bufferCommands: false, // Don't queue commands if not connected
     });
-    console.log('✅ Successfully connected to MongoDB Atlas');
+    console.log('✅ Connected to MongoDB Atlas');
   } catch (err) {
-    console.error('❌ Database connection error:', err.message);
-    throw err; // Ensure the error is reported
+    console.error('❌ DB Error:', err.message);
+    throw err;
   }
 };
 
 // Middleware to ensure DB connection
 app.use(async (req, res, next) => {
-  await connectDB();
-  next();
+  // Only wait for DB on non-health routes
+  if (req.path === '/api/health') return next();
+  
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    res.status(500).json({ error: 'Database connection failed', details: err.message });
+  }
 });
 
 if (process.env.NODE_ENV !== 'production') {
