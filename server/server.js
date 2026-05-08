@@ -13,6 +13,10 @@ app.use(cors());
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
 
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Backend is alive!', timestamp: new Date().toISOString() });
+});
+
 app.get('/', (req, res) => {
   console.log('💓 Heartbeat: Root route hit!');
   res.send('Sree HerboLight API is running...');
